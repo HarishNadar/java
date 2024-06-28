@@ -14,6 +14,9 @@ public class IncomeTaxCalculator {
     private JTextField incomeField;
     private JTextField taxField;
     private JButton calculateButton;
+    private JTextField nameField;
+    private JTextField occupationField;
+    private JTextField cityField;
 
     public IncomeTaxCalculator() {
         createGUI();
@@ -23,6 +26,15 @@ public class IncomeTaxCalculator {
         frame = new JFrame("Income Tax Calculator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new FlowLayout());
+
+        JLabel nameLabel = new JLabel("Enter your name:");
+        nameField = new JTextField(10);
+
+        JLabel occupationLabel = new JLabel("Enter your occupation:");
+        occupationField = new JTextField(10);
+
+        JLabel cityLabel = new JLabel("Enter your city:");
+        cityField = new JTextField(10);
 
         JLabel incomeLabel = new JLabel("Enter your income (in lakhs):");
         incomeField = new JTextField(10);
@@ -34,6 +46,12 @@ public class IncomeTaxCalculator {
         calculateButton = new JButton("Calculate");
         calculateButton.addActionListener(new CalculateButtonListener());
 
+        frame.add(nameLabel);
+        frame.add(nameField);
+        frame.add(occupationLabel);
+        frame.add(occupationField);
+        frame.add(cityLabel);
+        frame.add(cityField);
         frame.add(incomeLabel);
         frame.add(incomeField);
         frame.add(taxLabel);
@@ -47,15 +65,21 @@ public class IncomeTaxCalculator {
     private class CalculateButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            String name = nameField.getText();
+            String occupation = occupationField.getText();
+            String city = cityField.getText();
             double income = Double.parseDouble(incomeField.getText()) * 100000;
             double tax = calculateTax(income);
             taxField.setText(String.format("%.2f", tax));
 
             // Save data to database
             try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/income_tax", "username", "password")) {
-                PreparedStatement pstmt = con.prepareStatement("INSERT INTO income_tax_data (income, tax) VALUES (?, ?)");
-                pstmt.setDouble(1, income);
-                pstmt.setDouble(2, tax);
+                PreparedStatement pstmt = con.prepareStatement("INSERT INTO income_tax_data (name, occupation, city, income, tax) VALUES (?, ?, ?, ?, ?)");
+                pstmt.setString(1, name);
+                pstmt.setString(2, occupation);
+                pstmt.setString(3, city);
+                pstmt.setDouble(4, income);
+                pstmt.setDouble(5, tax);
                 pstmt.executeUpdate();
             } catch (SQLException ex) {
                 System.err.println("Error saving data to database: " + ex.getMessage());
@@ -63,7 +87,7 @@ public class IncomeTaxCalculator {
 
             // Save data to .cxt file
             try (BufferedWriter writer = new BufferedWriter(new FileWriter("income_tax_data.cxt", true))) {
-                writer.write("Income: " + income + ", Tax: " + tax + "\n");
+                writer.write("Name: " + name + ", Occupation: " + occupation + ", City: " + city + ", Income: " + income + ", Tax: " + tax + "\n");
             } catch (IOException ex) {
                 System.err.println("Error saving data to .cxt file: " + ex.getMessage());
             }
